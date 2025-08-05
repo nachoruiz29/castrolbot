@@ -1,0 +1,70 @@
+Catálogo de Aceites Castrol – Argentina
+
+1. Castrol EDGE
+   - Tipo: Aceite sintético de máxima performance
+   - Tecnología: Fluid Titanium
+   - Viscosidades disponibles:
+     • 0W-20
+     • 5W-30
+     • 10W-60
+   - Recomendado para:
+     • Motores de alto rendimiento
+     • Vehículos con exigencia deportiva
+     • Uso urbano e interurbano
+   - Certificaciones:
+     • API SP / SN Plus / SN
+     • ACEA A3/B4
+     • Recomendado por fabricantes como BMW, VW, Mercedes-Benz, Porsche
+
+2. Castrol GTX
+   - Tipo: Aceite mineral o semisintético de uso general
+   - Viscosidades disponibles:
+     • 15W-40
+     • 20W-50
+   - Recomendado para:
+     • Vehículos con alto kilometraje
+     • Motores antiguos o estándar
+     • Condiciones normales de uso
+   - Certificaciones:
+     • API SL / SJ
+     • Protección contra lodos y desgaste
+
+3. Castrol MAGNATEC
+   - Tipo: Semisintético con moléculas inteligentes
+   - Viscosidades disponibles:
+     • 10W-40
+     • 5W-30 (Full Synthetic)
+   - Recomendado para:
+     • Arranques frecuentes (tráfico urbano)
+     • Reducción de desgaste en arranque en frío
+   - Certificaciones:
+     • API SN
+     • ACEA A3/B4, A5/B5
+     • Ford WSS-M2C913-D
+
+4. Castrol VECTON (gama pesada – camiones)
+   - Tipo: Aceite para motores diésel pesados
+   - Viscosidades disponibles:
+     • 15W-40
+     • 10W-40
+   - Recomendado para:
+     • Flotas de camiones
+     • Motores Euro III, IV, V
+   - Certificaciones:
+     • API CI-4 / CJ-4
+     • Cummins CES 20081
+     • Volvo VDS-4
+     • MB-Approval 228.31
+
+Observaciones Generales:
+- Los aceites 5W-30 y 0W-20 están pensados para máxima eficiencia y ahorro de combustible.
+- El 20W-50 sigue siendo popular en Argentina por su uso en vehículos antiguos.
+- La línea MAGNATEC es ideal para ciudades como Buenos Aires, Rosario y Córdoba donde hay mucho “stop & go”.
+- Castrol EDGE 10W-60 es utilizado por usuarios de autos deportivos o tuning.
+- VECTON es el más usado en camiones Scania, Iveco, Volvo y Mercedes-Benz en rutas argentinas.
+
+Ejemplos de uso:
+- “Tengo un Toyota Corolla 2018, ¿qué Castrol me sirve?” → 5W-30 MAGNATEC
+- “Uso un VW Gol 2008 a GNC” → 15W-40 GTX
+- “Camión Scania Euro V” → 10W-40 VECTON
+- “Vivo en Bariloche y el auto duerme afuera” → 0W-20 EDGE

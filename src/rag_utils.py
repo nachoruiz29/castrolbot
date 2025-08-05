@@ -1,35 +1,50 @@
-# rag_utils.py
+# src/rag_utils.py
+
 import os
-import faiss
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+import faiss  # type: ignore
+import pickle
+import numpy as np
+from dotenv import load_dotenv
 from langchain_openai import OpenAIEmbeddings
 from langchain.schema import Document
 
+load_dotenv()
+
+# --- Paths ---
+CHUNKS_DIR = os.path.join(os.path.dirname(__file__), "..", "chunks")
+INDEX_FILE = os.path.join(CHUNKS_DIR, "catalogo.index")
+DOCS_FILE = os.path.join(CHUNKS_DIR, "catalogo.pkl")
+
+# --- Embeddings + Memoria global ---
 _embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
 _index = None
-_docs = []
+_docs: list[Document] = []
 
 def load_index():
+    """Carga el índice FAISS y los documentos embebidos desde disco."""
     global _index, _docs
-    catalog_path = "castrol_docs/castrol_argentina_catalogo.txt"
-    if not os.path.exists(catalog_path):
-        return
 
-    with open(catalog_path, "r", encoding="utf-8") as f:
-        text = f.read()
+    if not os.path.exists(INDEX_FILE) or not os.path.exists(DOCS_FILE):
+        raise RuntimeError("❌ No se encontraron los archivos de embeddings. Ejecutá castrol_loader.py primero.")
 
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    chunks = splitter.split_text(text)
-    _docs = [Document(page_content=chunk) for chunk in chunks]
-    vectors = [_embeddings.embed_query(doc.page_content) for doc in _docs]
-    _index = faiss.IndexFlatL2(len(vectors[0]))
-    _index.add(vectors)
+    with open(DOCS_FILE, "rb") as f:
+        _docs = pickle.load(f)
 
-def get_relevant_context(query: str, k=2):
-    if _index is None:
+    _index = faiss.read_index(INDEX_FILE)  # type: ignore
+
+def get_relevant_context(query: str, k: int = 3) -> str:
+    """
+    Busca los k chunks más relevantes del catálogo Castrol
+    que se relacionan con la consulta del usuario.
+    """
+    global _index, _docs
+
+    if _index is None or not _docs:
         load_index()
-    if _index is None:
-        return ""
+
     query_vector = _embeddings.embed_query(query)
-    distances, indices = _index.search([query_vector], k)
-    return "\n".join([_docs[i].page_content for i in indices[0]])
+    query_vector_np = np.array([query_vector]).astype("float32")
+
+    distances, indices = _index.search(query_vector_np, k)
+    results = [ _docs[i].page_content for i in indices[0] ]
+    return "\n".join(results)
