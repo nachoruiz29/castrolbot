@@ -1,6 +1,8 @@
 {
-  "python.analysis.typeCheckingMode": "off",
   "python.analysis.diagnosticSeverityOverrides": {
+    "reportUnknownParameterType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownMemberType": "none",
     "reportMissingTypeStubs": "none"
   }
 }
