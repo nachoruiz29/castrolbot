@@ -2,7 +2,6 @@
 import os
 from dotenv import load_dotenv
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-from telegram.error import TelegramError
 from telegram import Update
 
 from location_handler import handle_location, ask_for_location
@@ -20,16 +19,29 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 # --- Entrypoint unificado ---
 async def entrypoint(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user is None:
+        print("⚠️ Error: update.effective_user is None")
+        return
     user_id = update.effective_user.id
-    user_input = update.message.text.strip().lower()
+    user_input = ""
+    if update.message and update.message.text:
+        user_input = update.message.text.strip().lower()
     print("📥 Entró al entrypoint con mensaje:", user_input)
 
     # Si estamos esperando confirmación para mostrar el mapa
+    if context.user_data is None:
+        context.user_data = {}
     if context.user_data.get("awaiting_map_confirmation") and user_input in ["sí", "si", "dale", "ok", "quiero", "por supuesto"]:
         context.user_data["awaiting_map_confirmation"] = False
         if user_id in user_locations:
             lat, lon = user_locations[user_id]
-            stations = get_nearby_stations(lat, lon)
+            try:
+                lat_f = float(lat)
+                lon_f = float(lon)
+            except (TypeError, ValueError):
+                await update.message.reply_text("La ubicación guardada es inválida. Por favor envía tu ubicación nuevamente.")
+                return
+            stations = get_nearby_stations(lat_f, lon_f)
             if stations:
                 await send_location_map(update, context, stations)
             else:

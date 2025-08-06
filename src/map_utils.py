@@ -1,16 +1,26 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 import math
+import os
+import csv
 
-# Mock de estaciones (nombre, lat, lon)
-STATIONS = [
-    ("Axion Pilar", -34.4701, -58.9146),
-    ("Distribuidor Castrol Pilar", -34.4605, -58.9188),
-    ("Axion Ruta 25", -34.4531, -58.9081),
-    ("Castrol Express KM50", -34.4539, -58.9119),
-    # Agregá más si querés
-]
+def load_stations_from_csv():
+    stations = []
+    csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "saleslocations", "sites.csv")
+    with open(csv_path, newline='', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            print("lee row:", row)
+            name =  row.get("Name") or row.get("\ufeffName")
+            try:
+                lat = float(row["LATITUD"])
+                lon = float(row["LONGITUD"])
+                stations.append((name, lat, lon))
+            except (ValueError, KeyError):
+                continue
+    return stations
 
+STATIONS = load_stations_from_csv()
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # km
     d_lat = math.radians(lat2 - lat1)
