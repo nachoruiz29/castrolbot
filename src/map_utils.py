@@ -10,7 +10,7 @@ def load_stations_from_csv():
     with open(csv_path, newline='', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            print("lee row:", row)
+          #  print("lee row:", row)
             name =  row.get("Name") or row.get("\ufeffName")
             try:
                 lat = float(row["LATITUD"])
@@ -30,6 +30,7 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.asin(math.sqrt(a))
 
 def get_nearby_stations(user_lat, user_lon, max_km=10):
+    print(f"[LOG] get_nearby_stations: user_lat={user_lat}, user_lon={user_lon}, max_km={max_km}")
     return [
         (name, lat, lon)
         for name, lat, lon in STATIONS
@@ -37,6 +38,6 @@ def get_nearby_stations(user_lat, user_lon, max_km=10):
     ]
 
 async def send_location_map(update: Update, context: ContextTypes.DEFAULT_TYPE, stations):
-    for name, lat, lon in stations:
+    for name, lat, lon in stations[:3]:
         await context.bot.send_location(chat_id=update.effective_chat.id, latitude=lat, longitude=lon)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=f"{name}")

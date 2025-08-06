@@ -31,39 +31,43 @@ Debés pedir más detalles si falta alguno de los siguientes factores importante
 Si alguno de estos datos no fue proporcionado, DEBÉS pedirlos primero antes de responder PERO PIDELOS DE A UNO Y EN FORMA COLOQUIAL, como si fueras un vendedor.
 
 Una vez que tengas los datos completos, buscá en el catálogo CASTROL Argentina el aceite más adecuado.
-Si no sabés el clima del usuario, ofrecé dos opciones: una para clima frío (ej. Patagonia) y otra para templado o cálido.
+Si no sabés el clima del usuario, ofrecé dos opciones: una para clima frío (ej. Patagonia) y otra para templado o cálido. Pero no preguntes si quiere recomendacion basada en clima.
 
 Pero si sabés que el usuario está en clima {clima}, entonces recomendá SOLO la opción adecuada para ese clima.
 Explicá las diferencias y en qué caso usar cada uno.
 
-Respondé en forma de tabla con:
+No cierres la conversacion ya que la continuaremos, o sea NO te despidas a menos que te digan Adios o algun sinonimo.
+
+Respondé en forma coloquial y amistosa con:
 - Producto Castrol
 - Tipo (Sintético, Semi, Mineral)
 - Viscosidad (ej: 5W-30)
 - Justificación técnica de la recomendación.
 
-Si el usuario compartió su ubicación, luego de mostrar el producto ofrecé si desea ver puntos de venta cercanos.
-
-Respondé siempre en español neutro para Argentina."""
+Respondé siempre en español neutro para Argentina.
+FINALMENTE NO CIERRES LA CONVERSACION CON UNA PREGUNTA ABIERTA. 
+NO cierres la conversacion despidiendote ya que el sistema hara preguntas por su cuenta"""
 
 users_last_product = {}
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, override_text: str | None = None):
-    user_id = update.effective_user.id  # type: ignore
-    user_input = override_text if override_text else update.message.text  # type: ignore
+    user_id = getattr(update.effective_user, "id", None)
+    user_input = override_text if override_text else (getattr(update.message, "text", "") if update and getattr(update, "message", None) else "")
 
     # Si no tiene ubicación todavía, guardamos el mensaje y pedimos ubicación
     if user_id not in user_locations:
         pending_messages[user_id] = user_input
         from location_handler import ask_for_location  # import local para evitar ciclos
-        await ask_for_location(update, context)
+        # Solo pedir ubicación si no la tiene
+        if not user_id in user_locations:
+            await ask_for_location(update, context)
         return
 
     # Clima si hay ubicación
     climate_hint = ""
-    lat, lon = user_locations[user_id]
-    clima = infer_climate_from_location(lat, lon)
-    climate_hint = f"El usuario está en una zona de clima {clima}.\n"
+    lat, lon = user_locations.get(user_id, (None, None))
+    clima = infer_climate_from_location(lat, lon) if lat and lon else "desconocido"
+    climate_hint = f"El usuario está en una zona de clima {clima}.\n" if clima != "desconocido" else ""
 
     # Inicializar historial
     if user_id not in user_histories:
@@ -88,27 +92,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, ove
         temperature=0.3,
         max_tokens=800
     )
-    reply = response.choices[0].message.content
+    reply = response.choices[0].message.content if response and response.choices and response.choices[0].message and response.choices[0].message.content else ""
 
     # Guardar historial
     user_histories[user_id].append({"role": "user", "content": user_input})
     user_histories[user_id].append({"role": "assistant", "content": reply})
     user_histories[user_id] = user_histories[user_id][-10:]
 
-    await update.message.reply_text(reply)
-
-    # Solo ofrecer puntos de venta si se detectó un producto
+    # Extraer el producto recomendado después de enviar la respuesta
     product_name = extract_product_name(reply)
     print("Producto detectado:", product_name)
 
-    if product_name and product_name.lower() != "el producto recomendado":
-        users_last_product[user_id] = product_name
-        context.user_data["product_for_map"] = product_name
-        await update.message.reply_text(
-            f"¿Querés ver dónde adquirir el *{product_name}* cerca tuyo?",
-            parse_mode='Markdown'
-        )
-        context.user_data["awaiting_map_confirmation"] = True
+    # Enviar la recomendación al usuario
+    if update and getattr(update, "message", None) and reply:
+        await update.message.reply_text(str(reply))
+        # Si se detectó producto y ubicación, preguntar por puntos de venta
+        if product_name and product_name.lower() != "el producto recomendado" and user_id in user_locations:
+            await update.message.reply_text(f"¿Te gustaría ver los puntos de venta donde puedes comprar {product_name}?")
+            context.user_data["product_for_map"] = product_name
+            context.user_data["producto_detectado"] = product_name
+            context.user_data["awaiting_map_confirmation"] = True
 
 
 async def handle_yes_no_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -8,7 +8,7 @@ async def ask_for_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     button = KeyboardButton("📍 Compartí tu ubicación", request_location=True)
     markup = ReplyKeyboardMarkup([[button]], one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text(
-        "¿Querés que te recomiende un aceite según el clima donde estás?",
+        "Por favor, aprueba la solicitud de la linea de abajo!!!",
         reply_markup=markup
     )
 
@@ -18,6 +18,7 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Guardar ubicación
     user_locations[user_id] = (location.latitude, location.longitude)
+    print(f"[LOG] Ubicación guardada para user_id={user_id}: lat={location.latitude}, lon={location.longitude}")
 
     if user_id in pending_messages:
         restored_text = pending_messages.pop(user_id)
