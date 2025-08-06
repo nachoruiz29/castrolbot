@@ -9,7 +9,6 @@ from telegram import Update
 from session_store import user_histories, user_locations, pending_messages
 from extract_product_name import extract_product_name
 from map_utils import get_nearby_stations, send_location_map
-#from location_handler import ask_for_location
 
 load_dotenv()
 
@@ -27,7 +26,7 @@ Debés pedir más detalles si falta alguno de los siguientes factores importante
 - Cantidad de kilómetros recorridos
 - Tipo de uso: urbano, ruta, campo o mixto
 - Presencia de filtro de partículas (DPF) si es diésel y solo si el vehiculo es diesel
-- Si el vehiculo es nafta NO pedir la informacion del DPF
+- Si el vehiculo es nafta NO pedir la información del DPF
 
 Si alguno de estos datos no fue proporcionado, DEBÉS pedirlos primero antes de responder PERO PIDELOS DE A UNO Y EN FORMA COLOQUIAL, como si fueras un vendedor.
 
@@ -41,7 +40,7 @@ Respondé en forma de tabla con:
 - Producto Castrol
 - Tipo (Sintético, Semi, Mineral)
 - Viscosidad (ej: 5W-30)
-- Justificación técnica de la recomendacion.
+- Justificación técnica de la recomendación.
 
 Si el usuario compartió su ubicación, luego de mostrar el producto ofrecé si desea ver puntos de venta cercanos.
 
@@ -56,6 +55,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, ove
     # Si no tiene ubicación todavía, guardamos el mensaje y pedimos ubicación
     if user_id not in user_locations:
         pending_messages[user_id] = user_input
+        from location_handler import ask_for_location  # import local para evitar ciclos
         await ask_for_location(update, context)
         return
 
@@ -65,11 +65,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, ove
     clima = infer_climate_from_location(lat, lon)
     climate_hint = f"El usuario está en una zona de clima {clima}.\n"
 
+    # Inicializar historial
     if user_id not in user_histories:
         user_histories[user_id] = []
 
+    # Contexto RAG
     context_text = get_relevant_context(user_input)
 
+    # Armar prompt para OpenAI
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     if climate_hint:
         messages.append({"role": "user", "content": climate_hint.strip()})
@@ -78,6 +81,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, ove
         messages.append({"role": "user", "content": context_text})
     messages.append({"role": "user", "content": user_input})
 
+    # Consulta a OpenAI
     response = client.chat.completions.create(
         model="gpt-4",
         messages=messages,
@@ -86,22 +90,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE, ove
     )
     reply = response.choices[0].message.content
 
+    # Guardar historial
     user_histories[user_id].append({"role": "user", "content": user_input})
     user_histories[user_id].append({"role": "assistant", "content": reply})
     user_histories[user_id] = user_histories[user_id][-10:]
 
     await update.message.reply_text(reply)
 
-    # Verificar si hay ubicación para ofrecer mapa
+    # Solo ofrecer puntos de venta si se detectó un producto
     product_name = extract_product_name(reply)
     print("Producto detectado:", product_name)
-    users_last_product[user_id] = product_name
-    context.user_data["product_for_map"] = product_name
-    await update.message.reply_text(
-        f"¿Querés ver dónde adquirir el *{product_name}* cerca tuyo?",
-        parse_mode='Markdown'
-    )
-    context.user_data["awaiting_map_confirmation"] = True
+
+    if product_name and product_name.lower() != "el producto recomendado":
+        users_last_product[user_id] = product_name
+        context.user_data["product_for_map"] = product_name
+        await update.message.reply_text(
+            f"¿Querés ver dónde adquirir el *{product_name}* cerca tuyo?",
+            parse_mode='Markdown'
+        )
+        context.user_data["awaiting_map_confirmation"] = True
 
 
 async def handle_yes_no_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -117,8 +124,10 @@ async def handle_yes_no_reply(update: Update, context: ContextTypes.DEFAULT_TYPE
             stations = get_nearby_stations(lat, lon)
 
             if stations:
-                await update.message.reply_text(f"Estos son los puntos de venta cercanos donde podrías conseguir *{product}*:",
-                                                parse_mode='Markdown')
+                await update.message.reply_text(
+                    f"Estos son los puntos de venta cercanos donde podrías conseguir *{product}*:",
+                    parse_mode='Markdown'
+                )
                 await send_location_map(update, context, stations)
             else:
                 await update.message.reply_text("No encontré puntos de venta a menos de 10 km de tu ubicación.")
